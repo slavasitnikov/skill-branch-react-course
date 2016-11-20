@@ -1,17 +1,35 @@
 import express from 'express';
 import cors from 'cors';
+import xregexp from 'xregexp';
 
 const app = express();
 app.use(cors());
+
+function capitalizeString(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 app.get('/', (req, res) => {
-  let a = req.query.a;
-  let b = req.query.b;
+  const invalidMessage = 'Invalid fullname';
+  const fullname = req.query.fullname;
 
-  if (isNaN(a)) a = 0;
-  if (isNaN(b)) b = 0;
+  if (!fullname || !xregexp('^(\\pL|\\s|\')+$', 'ig').test(fullname)) {
+    res.send(invalidMessage);
+    return;
+  }
 
-  const result = +a + +b;
-  res.send(result.toString());
+  const matches = fullname.match(xregexp('(\\pL)+', 'ig'));
+  const words = matches.length;
+  if (words > 0 && words < 4) {
+    let result = capitalizeString(matches[words - 1].toString());
+    for (let i = 0; i < words - 1; i++) {
+      result += ` ${matches[i].charAt(0).toUpperCase()}.`;
+    }
+
+    res.send(result);
+  } else {
+    res.send(invalidMessage);
+  }
 });
 
 app.listen(3000, () => {
